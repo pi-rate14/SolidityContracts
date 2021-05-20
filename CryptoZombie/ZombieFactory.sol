@@ -1,59 +1,50 @@
 // SPDX-License-Identifier: MIT
+//Continue at Lesson 3 Chapter 8
 pragma solidity >=0.5.0;
 import "./Ownable.sol";
 
-contract ZombieFactory is Ownable{
+contract ZombieFactory is Ownable {
+    event NewZombie(uint256 zombieId, string name, uint256 dna);
 
-    event NewZombie(uint zombieId, string name, uint dna);
-
-    uint dnaDigits = 16;
-    uint dnaModulus = 10 ** dnaDigits;
+    uint256 dnaDigits = 16;
+    uint256 dnaModulus = 10**dnaDigits;
+    uint256 cooldownTime = 1 days;
 
     struct Zombie {
         string name;
-        uint dna;
+        uint256 dna;
+        uint32 level;
+        uint32 readyTime;
     }
 
     Zombie[] public zombies;
 
-    mapping (uint => address) public zombieToOwner;
-    mapping (address => uint) ownerZombieCount;
+    mapping(uint256 => address) public zombieToOwner;
+    mapping(address => uint256) ownerZombieCount;
 
-    function _createZombie(string memory _name, uint _dna) internal {
-        zombies.push(Zombie(_name, _dna));
-        uint id = zombies.length-1;
+    function _createZombie(string memory _name, uint256 _dna) internal {
+        zombies.push(
+            Zombie(_name, _dna, 1, uint32(block.timestamp + cooldownTime))
+        );
+        uint256 id = zombies.length - 1;
         zombieToOwner[id] = msg.sender;
         ownerZombieCount[msg.sender]++;
         emit NewZombie(id, _name, _dna);
     }
 
-    function _generateRandomDna(string memory _str) private view returns (uint) {
-        uint rand = uint(keccak256(abi.encodePacked(_str)));
+    function _generateRandomDna(string memory _str)
+        private
+        view
+        returns (uint256)
+    {
+        uint256 rand = uint256(keccak256(abi.encodePacked(_str)));
         return rand % dnaModulus;
     }
 
     function createRandomZombie(string memory _name) public {
         require(ownerZombieCount[msg.sender] == 0);
-        uint randDna = _generateRandomDna(_name);
+        uint256 randDna = _generateRandomDna(_name);
+        randDna = randDna - (randDna % 100);
         _createZombie(_name, randDna);
     }
-
 }
-
-interface KittyInterface {
-  function getKitty(uint256 _id) external view returns (
-    bool isGestating,
-    bool isReady,
-    uint256 cooldownIndex,
-    uint256 nextActionAt,
-    uint256 siringWithId,
-    uint256 birthTime,
-    uint256 matronId,
-    uint256 sireId,
-    uint256 generation,
-    uint256 genes
-  );
-}
-
-
-
